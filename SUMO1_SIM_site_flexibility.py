@@ -83,7 +83,7 @@ volws = array([convexhull_volume(i, 1) for i in wstr]).T
 
 figure(1)
 plot(volns, 'C1.', markersize=1)
-plot(volws, 'C0.', markersize=1, alpha=0.5) 
+plot(volws, 'C0.', markersize=1, alpha=0.5)
 ylim(1, 2.2)
 savefig('SUMO1_2asq_volume.jpg', dpi=600)
 
@@ -97,27 +97,58 @@ ylim(1, 2.2)
 savefig('SUMO1_2asq_volume_hist.jpg', dpi=600)
 
 
-#F36-Y51
-distws = array([md.compute_distances(i, atom_pairs=[[126, 252]], periodic=False).ravel() 
-                for i in wstr]).T 
-distns = array([md.compute_distances(i, atom_pairs=[[126, 252]], periodic=False).ravel() 
-                for i in nstr]).T
+# calculate pair-wise distance between atoms of all trajectories
+# compare SIM-bound with unbound simulations
+nstr = [md.load('SUMO1_2asq_noSIM_{}_400ns.h5'.format(i)) for i in range(1, 10)]
+wstr = [md.load('SUMO1_2asq_wSIM_{}_400ns.h5'.format(i)) for i in range(1, 10)]
 
-figure(1)
-plot(distns, 'C1.', markersize=1)
-plot(distws, 'C0.', markersize=1, alpha=0.5) 
-ylim(0.5, 1.25)
-savefig('SUMO1_2asq_dist_F35CG_Y51CG.jpg', dpi=600)
+def atom_pair_dist(pair='Y36CG_R54CZ', y=[0.25, 1.75]):
+    top = wstr[0].topology
+    s = pair.split('_')
+    pair_ix = [[top.select('residue=={0} and name=={1}'.format(s[0][1:3], s[0][3:]))[0],
+                top.select('residue=={0} and name=={1}'.format(s[1][1:3], s[1][3:]))[0]]]
+    
+    distws = array([md.compute_distances(i, atom_pairs=pair_ix, periodic=False).ravel() 
+                    for i in wstr]).T 
+    distns = array([md.compute_distances(i, atom_pairs=pair_ix, periodic=False).ravel() 
+                    for i in nstr]).T
 
-figure(2)
-hist(distns.ravel(), color='C1', bins=40, linewidth=1, 
-     orientation='horizontal')
-hist(distws.ravel(), color='C0', alpha=0.6, bins=40, linewidth=1, 
-     orientation='horizontal')
-legend(['no SIM', 'with SIM'], frameon=0) 
-ylim(0.5, 1.25)
-savefig('SUMO1_2asq_dist_F35CG_Y51CG_hist.jpg', dpi=600)
+    figure(1)
+    plot(distns, 'C1.', markersize=1)
+    plot(distws, 'C0.', markersize=1, alpha=0.5) 
+    ylim(y)
+    savefig('SUMO1_2asq_dist_{}.jpg'.format(pair), dpi=600)
 
+    figure(2, figsize=(3.2, 4.8))
+    hist(distns.ravel(), color='C1', bins=100, linewidth=1, 
+         orientation='horizontal')
+    hist(distws.ravel(), color='C0', alpha=0.6, bins=100, linewidth=1, 
+         orientation='horizontal')
+    legend(['no SIM', 'with SIM'], frameon=0) 
+    ylim(y)
+    savefig('SUMO1_2asq_dist_{}_hist.jpg'.format(pair), dpi=600)
+
+
+#F36CG_Y51CG
+atom_pair_dist(pair='F36CG_Y51CG', y=[0.25, 1.75])
+
+#F36CG_R54CZ
+atom_pair_dist(pair='F36CG_R54CZ', y=[0.25, 1.75])
+
+#I34CB_R54CZ
+atom_pair_dist(pair='I34CB_R54CZ', y=[0.25, 1.75])
+
+#K39NZ_K46NZ
+atom_pair_dist(pair='K39NZ_K46NZ', y=[0.2, 2.2])
+
+#Y51CG_R54CZ
+atom_pair_dist(pair='Y51CG_R54CZ', y=[0.4, 1.4])
+
+#K37NZ_R54CZ
+atom_pair_dist(pair='K37NZ_R54CZ', y=[0.25, 2.5])
+
+#F36CG_K37NZ
+atom_pair_dist(pair='F36CG_K37NZ', y=[0.4, 1.4])
 
 
 
