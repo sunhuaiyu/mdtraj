@@ -46,7 +46,7 @@ traj_files = sum(list(traj_dict.values()))
 d = dict(zip(traj_files, Pool(48).map(map_fn1, traj_files)))
 
 for cp in compound:
-    bound_frames, total_frames = np.array(list(map(lambda i: d[i], traj_dict[cp]))).sum(0)
+    bound_frames, total_frames = np.array([d[i] for i in traj_dict[cp]]).sum(0)
     fraction = bound_frames/total_frames
     print(cp, round(fraction, 3), total_frames//1000)
     
