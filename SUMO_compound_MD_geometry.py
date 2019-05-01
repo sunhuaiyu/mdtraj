@@ -54,4 +54,96 @@ def SUMO_ligand_dist(traj):
     return (((a - b) ** 2).sum(1)) ** 0.5
 
 
+def atom_pair_ix(traj, pair='F36CG_R54CZ'):
+    top = traj.topology
+    s = pair.split('_')
+    pair_ix = top.select_pairs('residue=={0} and name=={1}'.format(s[0][1:3], s[0][3:]),
+                               'residue=={0} and name=={1}'.format(s[1][1:3], s[1][3:]))
+    return pair_ix
+
+def atom_pair_dist2(traj_list, pair='F36CG_R54CZ'):
+    pair_ix = atom_pair_ix(traj_list[0], pair=pair)    
+    dist = array([md.compute_distances(i, atom_pairs=pair_ix, periodic=False).ravel() 
+                    for i in traj_list])
+    return dist
+    
+    
+
+T = 0.7
+# Histograms of atomic distance involving trajectories bound with SIM, A12 and B27
+# dist_dict computed in SUMO_compound_mdtraj_analysis.py
+
+A12, B27 = 'PHG00686', 'SEW05414'
+
+pair = 'F36CG_Y51CG'
+#pair = 'K37NZ_R54CZ'
+#pair = 'F36CG_R54CZ'
+
+
+tr2uyz = [md.load('SUMO1_2uyz_{}_400ns.h5'.format(i+1))[::10] for i in range(12)]
+dist2uyz = atom_pair_dist2(tr2uyz, pair).ravel()
+vol2uyz = np.array([convexhull_volume(i, 1) for i in tr2uyz]).ravel()
+
+F36_A12 = [dist_dict['SUMO1_2uyz_{0}_F{1}_5000ns.h5'.format(A12, i+1)] for i in range(12)]
+trA12 = md.join([traj_dict['SUMO1_2uyz_{0}_F{1}_5000ns.h5'.format(A12, i+1)][F36_A12[i] < T] 
+                   for i in range(12)])
+distA12 = atom_pair_dist2([trA12], pair).ravel()
+volA12 = convexhull_volume(trA12, 1)
+
+F36_B27 = [dist_dict['SUMO1_2uyz_{0}_F{1}_5000ns.h5'.format(B27, i+1)] for i in range(12)]
+trB27 = md.join([traj_dict['SUMO1_2uyz_{0}_F{1}_5000ns.h5'.format(B27, i+1)][F36_B27[i] < T] 
+                   for i in range(12)])
+distB27 = atom_pair_dist2([trB27], pair).ravel()
+volB27 = convexhull_volume(trB27, 1)
+
+trSIM = [md.load('SUMO1_2asq_wSIM_{}_400ns.h5'.format(i+1)) for i in range(9)]
+distSIM = atom_pair_dist2(trSIM, pair).ravel()
+volSIM = np.array([convexhull_volume(i, 1) for i in  trSIM]).ravel()
+
+
+figure(figsize=(3.6, 4.8))
+hist(distSIM, color='tab:blue', alpha=0.6, bins=100, linewidth=1, orientation='horizontal')
+hist(distA12, color= 'gray', alpha=0.6, bins=100, linewidth=1, orientation='horizontal')
+legend(['SIM', 'A12'], fontsize=15, frameon=False)
+name = 'SUMO1_SIM_A12_' + pair
+#title(name);  
+#ylim(0.4, 1.4) #pair = 'F36CG_Y51CG'
+#xlim(0, 1500); ylim(0.5, 3.0) #pair = 'K37NZ_R54CZ'
+tight_layout()
+savefig(name + '.jpg', dpi=600) 
+
+
+figure(figsize=(3.6, 4.8))
+hist(distSIM, color='tab:blue', alpha=0.6, bins=100, linewidth=1, orientation='horizontal')
+hist(distB27, color= 'gray', alpha=0.6, bins=100, linewidth=1, orientation='horizontal')
+legend(['SIM', 'B27'], fontsize=15, frameon=False)
+name = 'SUMO1_SIM_B27_' + pair
+#title(name); 
+#ylim(0.4, 1.4) #pair = 'F36CG_Y51CG'
+#xlim(0, 1500); ylim(0.5, 3.0) #pair = 'K37NZ_R54CZ'
+tight_layout()
+savefig(name + '.jpg', dpi=600) 
+
+
+
+figure(figsize=(3.6, 4.8))
+hist(volSIM, color='tab:blue', alpha=0.6, bins=100, linewidth=1, orientation='horizontal')
+hist(volA12, color= 'gray', alpha=0.6, bins=100, linewidth=1, orientation='horizontal')
+legend(['SIM', 'A12'], fontsize=15, frameon=False)
+name = 'SUMO1_SIM_A12_convexhull' 
+#title(name);  
+ylim(1.2, 2.4)
+tight_layout()
+savefig(name + '.jpg', dpi=600) 
+
+
+figure(figsize=(3.6, 4.8))
+hist(volSIM, color='tab:blue', alpha=0.6, bins=100, linewidth=1, orientation='horizontal')
+hist(volB27, color= 'gray', alpha=0.6, bins=100, linewidth=1, orientation='horizontal')
+legend(['SIM', 'B27'], fontsize=15, frameon=False)
+name = 'SUMO1_SIM_B27_convexhull'
+#title(name); 
+ylim(1.2, 2.4)
+tight_layout()
+savefig(name + '.jpg', dpi=600) 
 
